@@ -1479,7 +1479,163 @@ async def __agent_exec__(client, telegram_service, service, events, functions, t
             "bot_info": bot_info_data,
         }
 
+    async def get_participant_permissions(
+        self,
+        chat_identifier: str,
+        user_identifier: str,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        chat_target = self._clean_bot_username(chat_identifier)
+        user_target = self._clean_bot_username(user_identifier)
+
+        chat_entity = await client.get_input_entity(chat_target)
+        user_entity = await client.get_input_entity(user_target)
+
+        res = await client(functions.channels.GetParticipantRequest(
+            channel=chat_entity,
+            participant=user_entity,
+        ))
+        p = getattr(res, "participant", None)
+        user = res.users[0] if (hasattr(res, "users") and res.users) else None
+
+        role = "member"
+        is_admin = False
+        is_creator = False
+        is_banned = False
+        admin_rights = None
+        banned_rights = None
+        rank = getattr(p, "rank", None)
+
+        if isinstance(p, types.ChannelParticipantCreator):
+            role = "creator"
+            is_admin = True
+            is_creator = True
+            if getattr(p, "admin_rights", None):
+                ar = p.admin_rights
+                admin_rights = {
+                    "change_info": bool(getattr(ar, "change_info", True)),
+                    "post_messages": bool(getattr(ar, "post_messages", True)),
+                    "edit_messages": bool(getattr(ar, "edit_messages", True)),
+                    "delete_messages": bool(getattr(ar, "delete_messages", True)),
+                    "ban_users": bool(getattr(ar, "ban_users", True)),
+                    "invite_users": bool(getattr(ar, "invite_users", True)),
+                    "pin_messages": bool(getattr(ar, "pin_messages", True)),
+                    "add_admins": bool(getattr(ar, "add_admins", True)),
+                    "manage_topics": bool(getattr(ar, "manage_topics", True)),
+                }
+        elif isinstance(p, types.ChannelParticipantAdmin):
+            role = "admin"
+            is_admin = True
+            if getattr(p, "admin_rights", None):
+                ar = p.admin_rights
+                admin_rights = {
+                    "change_info": bool(getattr(ar, "change_info", False)),
+                    "post_messages": bool(getattr(ar, "post_messages", False)),
+                    "edit_messages": bool(getattr(ar, "edit_messages", False)),
+                    "delete_messages": bool(getattr(ar, "delete_messages", False)),
+                    "ban_users": bool(getattr(ar, "ban_users", False)),
+                    "invite_users": bool(getattr(ar, "invite_users", False)),
+                    "pin_messages": bool(getattr(ar, "pin_messages", False)),
+                    "add_admins": bool(getattr(ar, "add_admins", False)),
+                    "manage_topics": bool(getattr(ar, "manage_topics", False)),
+                }
+        elif isinstance(p, types.ChannelParticipantBanned):
+            role = "banned" if getattr(p, "left", False) else "restricted"
+            is_banned = True
+            if getattr(p, "banned_rights", None):
+                br = p.banned_rights
+                banned_rights = {
+                    "view_messages": bool(getattr(br, "view_messages", False)),
+                    "send_messages": bool(getattr(br, "send_messages", False)),
+                    "send_media": bool(getattr(br, "send_media", False)),
+                    "send_stickers": bool(getattr(br, "send_stickers", False)),
+                    "send_gifs": bool(getattr(br, "send_gifs", False)),
+                    "embed_links": bool(getattr(br, "embed_links", False)),
+                    "send_polls": bool(getattr(br, "send_polls", False)),
+                    "change_info": bool(getattr(br, "change_info", False)),
+                    "invite_users": bool(getattr(br, "invite_users", False)),
+                    "pin_messages": bool(getattr(br, "pin_messages", False)),
+                    "manage_topics": bool(getattr(br, "manage_topics", False)),
+                    "until_date": br.until_date.isoformat() if getattr(br, "until_date", None) else None,
+                }
+        elif isinstance(p, types.ChannelParticipantLeft):
+            role = "left"
+
+        return {
+            "chat": chat_target,
+            "user": {
+                "id": getattr(user, "id", None),
+                "username": getattr(user, "username", None),
+                "first_name": getattr(user, "first_name", None),
+                "is_bot": getattr(user, "bot", False),
+            },
+            "role": role,
+            "is_admin": is_admin,
+            "is_creator": is_creator,
+            "is_banned": is_banned,
+            "rank": rank,
+            "admin_rights": admin_rights,
+            "banned_rights": banned_rights,
+        }
+
+    async def block_peer(
+        self,
+        peer_identifier: str,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(peer_identifier)
+        input_peer = await client.get_input_entity(target)
+
+        await client(functions.contacts.BlockRequest(id=input_peer))
+        return {"success": True, "blocked_peer": target}
+
+    async def unblock_peer(
+        self,
+        peer_identifier: str,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(peer_identifier)
+        input_peer = await client.get_input_entity(target)
+
+        await client(functions.contacts.UnblockRequest(id=input_peer))
+        return {"success": True, "unblocked_peer": target}
+
+    async def get_blocked_peers(
+        self,
+        limit: int = 50,
+    ) -> List[Dict[str, Any]]:
+        client = await self._ensure_connected()
+        res = await client(functions.contacts.GetBlockedRequest(offset=0, limit=limit))
+
+        user_map = {u.id: u for u in getattr(res, "users", [])}
+        blocked_list = []
+        for item in getattr(res, "blocked", []):
+            peer_id = getattr(item, "peer_id", None)
+            user_id = None
+            if hasattr(peer_id, "user_id"):
+                user_id = peer_id.user_id
+            elif isinstance(peer_id, int):
+                user_id = peer_id
+
+            u = user_map.get(user_id) if user_id else None
+            name = ""
+            if u:
+                first = getattr(u, "first_name", "") or ""
+                last = getattr(u, "last_name", "") or ""
+                name = f"{first} {last}".strip() or first
+
+            blocked_list.append({
+                "user_id": user_id,
+                "name": name or None,
+                "username": getattr(u, "username", None) if u else None,
+                "phone": self._mask_phone(getattr(u, "phone", None)) if u else None,
+                "is_bot": getattr(u, "bot", False) if u else False,
+                "date": item.date.isoformat() if getattr(item, "date", None) else None,
+            })
+        return blocked_list
+
 
 telegram_service = TelegramService()
+
 
 

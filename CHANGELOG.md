@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [v1.11.0] — 2026-09-05 (21:20 IST)
+`[2026-09-05]{21:20:00} v1.11.0 Release: Added member permissions inspection and peer blocking management #54 total MCP tools`
+
+### 🚀 New Features
+* **Granular Member & Admin Permissions Inspector (`telegram_get_participant_permissions`)**: Inspects granular admin rights (`change_info`, `post_messages`, `edit_messages`, `delete_messages`, `ban_users`, `invite_users`, `pin_messages`, `add_admins`, `manage_topics`) and restriction rules (`send_messages`, `send_media`, `send_stickers`, `embed_links`, `send_polls`, `until_date`) for any member or bot in channels and supergroups.
+* **Peer Blocking & Blocklist Management (`telegram_block_peer`, `telegram_unblock_peer`, `telegram_get_blocked_peers`)**: Allows automated agents to block or unblock users and bots, and retrieve the full active blocklist with masked phone numbers.
+
+---
+
 ## [v1.10.0] — 2026-09-05 (21:16 IST)
 `[2026-09-05]{21:16:00} v1.10.0 Release: Added geolocation & venue dispatch and extended user profile & premium inspector #50 total MCP tools`
 

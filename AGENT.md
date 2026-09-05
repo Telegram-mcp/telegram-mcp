@@ -268,3 +268,19 @@ The server exposes the following tools:
 50. `telegram_get_user_profile`
     - **Arguments**: `user_identifier`
     - **Usage**: Retrieves full profile metadata including biography, Telegram Premium status, verification badge, fake/scam flags, and mutual groups.
+
+51. `telegram_get_participant_permissions`
+    - **Arguments**: `chat_identifier`, `user_identifier`
+    - **Usage**: Inspects granular admin rights or restriction rules for a specific member/bot in a group or channel.
+
+52. `telegram_block_peer`
+    - **Arguments**: `peer_identifier`
+    - **Usage**: Blocks a user or bot from contacting you.
+
+53. `telegram_unblock_peer`
+    - **Arguments**: `peer_identifier`
+    - **Usage**: Unblocks a previously blocked user or bot.
+
+54. `telegram_get_blocked_peers`
+    - **Arguments**: `limit?` (default: `50`)
+    - **Usage**: Retrieves list of all currently blocked peers with privacy-masked phone numbers.

@@ -1124,6 +1124,66 @@ async def telegram_get_user_profile(
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
 
 
+@mcp.tool()
+async def telegram_get_participant_permissions(
+    chat_identifier: str,
+    user_identifier: str,
+) -> str:
+    """
+    Inspects granular administrator rights or banned/restricted rights for a user or bot in a channel/group.
+    """
+    try:
+        perms = await telegram_service.get_participant_permissions(
+            chat_identifier=chat_identifier,
+            user_identifier=user_identifier,
+        )
+        return json.dumps({"status": "success", "permissions": perms}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_block_peer(
+    peer_identifier: str,
+) -> str:
+    """
+    Blocks a user or bot from contacting you.
+    """
+    try:
+        res = await telegram_service.block_peer(peer_identifier=peer_identifier)
+        return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_unblock_peer(
+    peer_identifier: str,
+) -> str:
+    """
+    Unblocks a previously blocked user or bot.
+    """
+    try:
+        res = await telegram_service.unblock_peer(peer_identifier=peer_identifier)
+        return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_get_blocked_peers(
+    limit: int = 50,
+) -> str:
+    """
+    Retrieves the list of currently blocked users and bots.
+    """
+    try:
+        blocked = await telegram_service.get_blocked_peers(limit=limit)
+        return json.dumps({"status": "success", "count": len(blocked), "blocked_peers": blocked}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
 if __name__ == "__main__":
     def handle_signal(*args):
         sys.exit(0)

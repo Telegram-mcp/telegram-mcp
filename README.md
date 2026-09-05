@@ -150,6 +150,10 @@ Add to your `claude_desktop_config.json`:
 | `telegram_download_profile_photo` | `bot_username`, `output_dir?` | Downloads the profile photo or avatar of any user, bot, or group for visual inspection. |
 | `telegram_send_location` | `bot_username`, `latitude`, `longitude`, `title?`, `address?`, `provider?` | Sends geographic coordinates or a named venue to a bot or chat. |
 | `telegram_get_user_profile` | `user_identifier` | Retrieves full profile metadata (about, Telegram Premium, verified, badges). |
+| `telegram_get_participant_permissions` | `chat_identifier`, `user_identifier` | Inspects administrator or restricted permissions of a user or bot in a group/channel. |
+| `telegram_block_peer` | `peer_identifier` | Blocks a user or bot from contacting you. |
+| `telegram_unblock_peer` | `peer_identifier` | Unblocks a previously blocked user or bot. |
+| `telegram_get_blocked_peers` | `limit?` | Retrieves the list of currently blocked users and bots. |
 | `telegram_execute_code` | `code`, `timeout_seconds?` | Executes arbitrary Python code with live Telethon client access. |
 | `telegram_get_chat_history` | `bot_username`, `limit?` | Fetches recent conversation history. |
 | `telegram_clear_chat` | `bot_username` | Clears conversation dialog for clean tests. |

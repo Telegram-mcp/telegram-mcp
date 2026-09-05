@@ -55,12 +55,16 @@ class TestServerTools(unittest.TestCase):
             "telegram_download_profile_photo",
             "telegram_send_location",
             "telegram_get_user_profile",
+            "telegram_get_participant_permissions",
+            "telegram_block_peer",
+            "telegram_unblock_peer",
+            "telegram_get_blocked_peers",
             "telegram_clear_chat",
             "telegram_send_and_verify",
             "telegram_run_test_suite",
             "telegram_execute_code",
         ]
-        self.assertEqual(len(expected_tools), 50)
+        self.assertEqual(len(expected_tools), 54)
         for tool in expected_tools:
             self.assertIn(tool, tool_names, f"Missing tool: {tool}")
 
@@ -129,6 +133,66 @@ class TestServerTools(unittest.TestCase):
             self.assertEqual(profile["about"], "Building cool agents")
             self.assertEqual(profile["phone"], "+14 ****** 2671")
             self.assertNotIn("555", profile["phone"])
+
+    def test_get_participant_permissions(self):
+        import asyncio
+        from telethon import types
+
+        mock_client = AsyncMock()
+        mock_client.get_input_entity = AsyncMock(return_value="mock_peer")
+
+        mock_participant = types.ChannelParticipantAdmin(
+            user_id=123,
+            promoted_by=456,
+            date=None,
+            admin_rights=types.ChatAdminRights(
+                change_info=True,
+                post_messages=True,
+                edit_messages=True,
+                delete_messages=True,
+                ban_users=True,
+                invite_users=True,
+                pin_messages=True,
+                add_admins=False,
+                anonymous=False,
+                manage_call=False,
+                other=False,
+            ),
+            rank="Moderator",
+        )
+        mock_user = MagicMock()
+        mock_user.id = 123
+        mock_user.username = "mod_user"
+        mock_user.first_name = "Mod"
+        mock_user.bot = False
+
+        mock_res = MagicMock()
+        mock_res.participant = mock_participant
+        mock_res.users = [mock_user]
+        mock_client.return_value = mock_res
+
+        with patch.object(server.telegram_service, "_ensure_connected", AsyncMock(return_value=mock_client)):
+            raw_result = asyncio.run(server.telegram_get_participant_permissions("@testchannel", "mod_user"))
+            parsed = json.loads(raw_result)
+            self.assertEqual(parsed["status"], "success")
+            perms = parsed["permissions"]
+            self.assertEqual(perms["role"], "admin")
+            self.assertTrue(perms["is_admin"])
+            self.assertEqual(perms["rank"], "Moderator")
+            self.assertTrue(perms["admin_rights"]["ban_users"])
+
+    def test_block_peer(self):
+        import asyncio
+
+        mock_client = AsyncMock()
+        mock_client.get_input_entity = AsyncMock(return_value="mock_peer")
+        mock_client.return_value = True
+
+        with patch.object(server.telegram_service, "_ensure_connected", AsyncMock(return_value=mock_client)):
+            raw_result = asyncio.run(server.telegram_block_peer("@spambot"))
+            parsed = json.loads(raw_result)
+            self.assertTrue(parsed["success"])
+            self.assertEqual(parsed["blocked_peer"], "@spambot")
 
 
 if __name__ == "__main__":

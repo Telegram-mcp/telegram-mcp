@@ -58,3 +58,7 @@
 - `telegram_download_profile_photo(bot_username, output_dir)`: Downloads the profile photo or avatar of a user, bot, channel, or group.
 - `telegram_send_location(bot_username, latitude, longitude, title, address, provider, reply_to_msg_id, topic_id)`: Sends geographic coordinates or named venue to bot/chat.
 - `telegram_get_user_profile(user_identifier)`: Retrieves full user/bot profile metadata including bio, Telegram Premium status, verification badge, and scam/fake flags.
+- `telegram_get_participant_permissions(chat_identifier, user_identifier)`: Inspects admin rights and restriction rules of a member/bot in a group or channel.
+- `telegram_block_peer(peer_identifier)`: Blocks a user or bot from contacting you.
+- `telegram_unblock_peer(peer_identifier)`: Unblocks a previously blocked user or bot.
+- `telegram_get_blocked_peers(limit)`: Retrieves the list of currently blocked users and bots.
