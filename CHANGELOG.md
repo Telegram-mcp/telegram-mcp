@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [v1.12.0] — 2026-09-05 (21:24 IST)
+`[2026-09-05]{21:24:00} v1.12.0 Release: Added chat folders/filters inspection and disposable chat lifecycle management #57 total MCP tools`
+
+### 🚀 New Features
+* **Chat Folders & Category Filters (`telegram_get_dialog_filters`)**: Retrieves configured Telegram chat folders/filters (e.g. Work, Bots, Channels, Personal) along with folder IDs, titles, emoticons, and peer rule counts.
+* **Disposable Channel & Group Creation (`telegram_create_chat`, `telegram_delete_chat`)**: Programmatically creates disposable supergroups, broadcast channels, or forum supergroups for isolated integration testing workflows and provides clean deletion for teardown.
+
+---
+
 ## [v1.11.0] — 2026-09-05 (21:20 IST)
 `[2026-09-05]{21:20:00} v1.11.0 Release: Added member permissions inspection and peer blocking management #54 total MCP tools`
 

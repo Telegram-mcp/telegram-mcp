@@ -1634,8 +1634,77 @@ async def __agent_exec__(client, telegram_service, service, events, functions, t
             })
         return blocked_list
 
+    async def get_dialog_filters(self) -> List[Dict[str, Any]]:
+        client = await self._ensure_connected()
+        raw_filters = await client(functions.messages.GetDialogFiltersRequest())
+
+        filters = []
+        for f in raw_filters:
+            title_text = ""
+            if hasattr(f, "title"):
+                title_text = f.title.text if hasattr(f.title, "text") else str(f.title)
+
+            filters.append({
+                "id": getattr(f, "id", None),
+                "title": title_text,
+                "emoticon": getattr(f, "emoticon", None),
+                "contacts": bool(getattr(f, "contacts", False)),
+                "non_contacts": bool(getattr(f, "non_contacts", False)),
+                "groups": bool(getattr(f, "groups", False)),
+                "broadcasts": bool(getattr(f, "broadcasts", False)),
+                "bots": bool(getattr(f, "bots", False)),
+                "exclude_muted": bool(getattr(f, "exclude_muted", False)),
+                "exclude_read": bool(getattr(f, "exclude_read", False)),
+                "pinned_peers_count": len(getattr(f, "pinned_peers", []) or []),
+                "include_peers_count": len(getattr(f, "include_peers", []) or []),
+                "exclude_peers_count": len(getattr(f, "exclude_peers", []) or []),
+            })
+        return filters
+
+    async def create_chat(
+        self,
+        title: str,
+        about: Optional[str] = None,
+        megagroup: bool = True,
+        for_forum: bool = False,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        res = await client(functions.channels.CreateChannelRequest(
+            title=title,
+            about=about or "",
+            broadcast=not megagroup,
+            megagroup=megagroup,
+            forum=for_forum,
+        ))
+
+        channel = None
+        if hasattr(res, "chats") and res.chats:
+            channel = res.chats[0]
+
+        return {
+            "success": True,
+            "id": getattr(channel, "id", None),
+            "title": getattr(channel, "title", title),
+            "username": getattr(channel, "username", None),
+            "is_megagroup": bool(getattr(channel, "megagroup", megagroup)),
+            "is_broadcast": bool(getattr(channel, "broadcast", not megagroup)),
+            "is_forum": bool(getattr(channel, "forum", for_forum)),
+        }
+
+    async def delete_chat(
+        self,
+        chat_identifier: str,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(chat_identifier)
+        input_channel = await client.get_input_entity(target)
+
+        await client(functions.channels.DeleteChannelRequest(channel=input_channel))
+        return {"success": True, "deleted_chat": target}
+
 
 telegram_service = TelegramService()
+
 
 
 

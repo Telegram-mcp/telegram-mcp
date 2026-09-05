@@ -1184,6 +1184,55 @@ async def telegram_get_blocked_peers(
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
 
 
+@mcp.tool()
+async def telegram_get_dialog_filters() -> str:
+    """
+    Retrieves configured Telegram chat folders/filters (e.g. Work, Bots, Personal)
+    with their folder IDs, titles, and rule counts.
+    """
+    try:
+        filters = await telegram_service.get_dialog_filters()
+        return json.dumps({"status": "success", "count": len(filters), "dialog_filters": filters}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_create_chat(
+    title: str,
+    about: Optional[str] = None,
+    megagroup: bool = True,
+    for_forum: bool = False,
+) -> str:
+    """
+    Creates a new supergroup or broadcast channel for testing workflows or bot integrations.
+    """
+    try:
+        chat = await telegram_service.create_chat(
+            title=title,
+            about=about,
+            megagroup=megagroup,
+            for_forum=for_forum,
+        )
+        return json.dumps(chat, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_delete_chat(
+    chat_identifier: str,
+) -> str:
+    """
+    Permanently deletes a supergroup or channel (must be creator/owner).
+    """
+    try:
+        res = await telegram_service.delete_chat(chat_identifier=chat_identifier)
+        return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
 if __name__ == "__main__":
     def handle_signal(*args):
         sys.exit(0)

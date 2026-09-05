@@ -62,3 +62,6 @@
 - `telegram_block_peer(peer_identifier)`: Blocks a user or bot from contacting you.
 - `telegram_unblock_peer(peer_identifier)`: Unblocks a previously blocked user or bot.
 - `telegram_get_blocked_peers(limit)`: Retrieves the list of currently blocked users and bots.
+- `telegram_get_dialog_filters()`: Retrieves configured Telegram chat folders/filters with IDs and rule counts.
+- `telegram_create_chat(title, about, megagroup, for_forum)`: Creates a new supergroup or broadcast channel for testing workflows.
+- `telegram_delete_chat(chat_identifier)`: Permanently deletes a channel or supergroup.

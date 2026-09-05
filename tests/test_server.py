@@ -59,12 +59,15 @@ class TestServerTools(unittest.TestCase):
             "telegram_block_peer",
             "telegram_unblock_peer",
             "telegram_get_blocked_peers",
+            "telegram_get_dialog_filters",
+            "telegram_create_chat",
+            "telegram_delete_chat",
             "telegram_clear_chat",
             "telegram_send_and_verify",
             "telegram_run_test_suite",
             "telegram_execute_code",
         ]
-        self.assertEqual(len(expected_tools), 54)
+        self.assertEqual(len(expected_tools), 57)
         for tool in expected_tools:
             self.assertIn(tool, tool_names, f"Missing tool: {tool}")
 
@@ -193,6 +196,69 @@ class TestServerTools(unittest.TestCase):
             parsed = json.loads(raw_result)
             self.assertTrue(parsed["success"])
             self.assertEqual(parsed["blocked_peer"], "@spambot")
+
+    def test_get_dialog_filters(self):
+        import asyncio
+        from telethon import types
+
+        mock_client = AsyncMock()
+        mock_filter = MagicMock()
+        mock_filter.id = 2
+        mock_title = MagicMock()
+        mock_title.text = "Bots"
+        mock_filter.title = mock_title
+        mock_filter.emoticon = "🤖"
+        mock_filter.contacts = False
+        mock_filter.non_contacts = False
+        mock_filter.groups = False
+        mock_filter.broadcasts = False
+        mock_filter.bots = True
+        mock_filter.exclude_muted = False
+        mock_filter.exclude_read = False
+        mock_filter.pinned_peers = []
+        mock_filter.include_peers = [1, 2]
+        mock_filter.exclude_peers = []
+
+        mock_client.return_value = [mock_filter]
+
+        with patch.object(server.telegram_service, "_ensure_connected", AsyncMock(return_value=mock_client)):
+            raw_result = asyncio.run(server.telegram_get_dialog_filters())
+            parsed = json.loads(raw_result)
+            self.assertEqual(parsed["status"], "success")
+            self.assertEqual(parsed["count"], 1)
+            f = parsed["dialog_filters"][0]
+            self.assertEqual(f["title"], "Bots")
+            self.assertEqual(f["emoticon"], "🤖")
+            self.assertTrue(f["bots"])
+
+    def test_create_chat(self):
+        import asyncio
+
+        mock_client = AsyncMock()
+        mock_channel = MagicMock()
+        mock_channel.id = 100200300
+        mock_channel.title = "Test Automation Group"
+        mock_channel.username = "test_auto_grp"
+        mock_channel.megagroup = True
+        mock_channel.broadcast = False
+        mock_channel.forum = True
+
+        mock_res = MagicMock()
+        mock_res.chats = [mock_channel]
+        mock_client.return_value = mock_res
+
+        with patch.object(server.telegram_service, "_ensure_connected", AsyncMock(return_value=mock_client)):
+            raw_result = asyncio.run(server.telegram_create_chat(
+                title="Test Automation Group",
+                about="Testing",
+                megagroup=True,
+                for_forum=True,
+            ))
+            parsed = json.loads(raw_result)
+            self.assertTrue(parsed["success"])
+            self.assertEqual(parsed["id"], 100200300)
+            self.assertEqual(parsed["title"], "Test Automation Group")
+            self.assertTrue(parsed["is_forum"])
 
 
 if __name__ == "__main__":

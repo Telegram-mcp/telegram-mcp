@@ -284,3 +284,15 @@ The server exposes the following tools:
 54. `telegram_get_blocked_peers`
     - **Arguments**: `limit?` (default: `50`)
     - **Usage**: Retrieves list of all currently blocked peers with privacy-masked phone numbers.
+
+55. `telegram_get_dialog_filters`
+    - **Arguments**: None
+    - **Usage**: Retrieves configured Telegram chat folders/filters (e.g. Work, Bots, Channels) with folder IDs, titles, and rule counts.
+
+56. `telegram_create_chat`
+    - **Arguments**: `title`, `about?`, `megagroup?` (default: `True`), `for_forum?` (default: `False`)
+    - **Usage**: Creates a new supergroup, channel, or forum supergroup for isolated testing workflows.
+
+57. `telegram_delete_chat`
+    - **Arguments**: `chat_identifier`
+    - **Usage**: Permanently deletes a channel or supergroup created by the account.
