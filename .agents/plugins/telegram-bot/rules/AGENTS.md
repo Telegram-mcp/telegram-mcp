@@ -66,3 +66,5 @@
 - `telegram_create_chat(title, about, megagroup, for_forum)`: Creates a new supergroup or broadcast channel for testing workflows.
 - `telegram_delete_chat(chat_identifier)`: Permanently deletes a channel or supergroup.
 - `telegram_create_invite_link(chat_identifier, title, expire_in_seconds, expire_date_iso, usage_limit, request_needed)`: Generates custom invite links with expiration, usage limits, and join approval requirements.
+- `telegram_create_dialog_filter(title, emoticon, filter_id, bots, groups, broadcasts, contacts, non_contacts)`: Creates a new Telegram chat folder/filter.
+- `telegram_delete_dialog_filter(filter_id)`: Deletes a Telegram chat folder/filter by folder ID.

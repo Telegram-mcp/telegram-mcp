@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [v1.14.0] — 2026-09-05 (21:32 IST)
+`[2026-09-05]{21:32:00} v1.14.0 Release: Fix GetDialogFiltersRequest response parsing and add chat folder creation/deletion #60 total MCP tools`
+
+### 🐛 Bug Fixes
+* **Dialog Filters Response Parsing**: Fixed `TypeError: 'DialogFilters' object is not iterable` by accessing `.filters` on the MTProto `DialogFilters` object and gracefully handling default views (`DialogFilterDefault`). (Fixes #10)
+
+### 🚀 New Features
+* **Chat Folder Creation & Deletion (`telegram_create_dialog_filter`, `telegram_delete_dialog_filter`)**: Full management tools to create custom Telegram chat folders/filters (e.g., Bots, Groups, Channels, Work) with emoticons and rule toggles, or delete folders by ID.
+
+---
+
 ## [v1.13.0] — 2026-09-05 (21:27 IST)
 `[2026-09-05]{21:27:00} v1.13.0 Release: Added custom chat invite links, proxy routing support, and terminal QR code login #58 total MCP tools`
 

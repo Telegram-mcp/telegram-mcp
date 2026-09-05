@@ -300,3 +300,11 @@ The server exposes the following tools:
 58. `telegram_create_invite_link`
     - **Arguments**: `chat_identifier`, `title?`, `expire_in_seconds?`, `expire_date_iso?`, `usage_limit?`, `request_needed?` (default: `False`)
     - **Usage**: Generates customizable chat invite links with expiration timestamps, member limits, and approval gates.
+
+59. `telegram_create_dialog_filter`
+    - **Arguments**: `title`, `emoticon?`, `filter_id?`, `contacts?`, `non_contacts?`, `groups?`, `broadcasts?`, `bots?`, `exclude_muted?`, `exclude_read?`, `exclude_archived?`
+    - **Usage**: Creates a new Telegram chat folder/filter to categorize chats (e.g., Bots, Work, Crypto).
+
+60. `telegram_delete_dialog_filter`
+    - **Arguments**: `filter_id`
+    - **Usage**: Deletes a Telegram chat folder/filter by folder ID.

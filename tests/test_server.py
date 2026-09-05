@@ -60,6 +60,8 @@ class TestServerTools(unittest.TestCase):
             "telegram_unblock_peer",
             "telegram_get_blocked_peers",
             "telegram_get_dialog_filters",
+            "telegram_create_dialog_filter",
+            "telegram_delete_dialog_filter",
             "telegram_create_chat",
             "telegram_delete_chat",
             "telegram_create_invite_link",
@@ -68,7 +70,7 @@ class TestServerTools(unittest.TestCase):
             "telegram_run_test_suite",
             "telegram_execute_code",
         ]
-        self.assertEqual(len(expected_tools), 58)
+        self.assertEqual(len(expected_tools), 60)
         for tool in expected_tools:
             self.assertIn(tool, tool_names, f"Missing tool: {tool}")
 
@@ -222,7 +224,9 @@ class TestServerTools(unittest.TestCase):
         mock_filter.include_peers = [1, 2]
         mock_filter.exclude_peers = []
 
-        mock_client.return_value = [mock_filter]
+        mock_response = MagicMock()
+        mock_response.filters = [mock_filter]
+        mock_client.return_value = mock_response
 
         with patch.object(server.telegram_service, "_ensure_connected", AsyncMock(return_value=mock_client)):
             raw_result = asyncio.run(server.telegram_get_dialog_filters())
@@ -233,6 +237,26 @@ class TestServerTools(unittest.TestCase):
             self.assertEqual(f["title"], "Bots")
             self.assertEqual(f["emoticon"], "🤖")
             self.assertTrue(f["bots"])
+
+    def test_create_dialog_filter(self):
+        import asyncio
+
+        mock_client = AsyncMock()
+        mock_response = MagicMock()
+        mock_response.filters = []
+        mock_client.return_value = mock_response
+
+        with patch.object(server.telegram_service, "_ensure_connected", AsyncMock(return_value=mock_client)):
+            raw_result = asyncio.run(server.telegram_create_dialog_filter(
+                title="Work Chats",
+                emoticon="💼",
+                groups=True,
+            ))
+            parsed = json.loads(raw_result)
+            self.assertTrue(parsed["success"])
+            self.assertEqual(parsed["title"], "Work Chats")
+            self.assertEqual(parsed["emoticon"], "💼")
+            self.assertTrue(parsed["groups"])
 
     def test_create_chat(self):
         import asyncio

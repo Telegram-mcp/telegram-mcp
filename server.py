@@ -1204,6 +1204,56 @@ async def telegram_get_dialog_filters() -> str:
 
 
 @mcp.tool()
+async def telegram_create_dialog_filter(
+    title: str,
+    emoticon: Optional[str] = None,
+    filter_id: Optional[int] = None,
+    contacts: bool = False,
+    non_contacts: bool = False,
+    groups: bool = False,
+    broadcasts: bool = False,
+    bots: bool = False,
+    exclude_muted: bool = False,
+    exclude_read: bool = False,
+    exclude_archived: bool = False,
+) -> str:
+    """
+    Creates a new Telegram chat folder/filter (e.g., Bots, Work, Crypto) to organize conversations.
+    """
+    try:
+        res = await telegram_service.create_dialog_filter(
+            title=title,
+            emoticon=emoticon,
+            filter_id=filter_id,
+            contacts=contacts,
+            non_contacts=non_contacts,
+            groups=groups,
+            broadcasts=broadcasts,
+            bots=bots,
+            exclude_muted=exclude_muted,
+            exclude_read=exclude_read,
+            exclude_archived=exclude_archived,
+        )
+        return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_delete_dialog_filter(
+    filter_id: int,
+) -> str:
+    """
+    Deletes a Telegram chat folder/filter by its folder ID.
+    """
+    try:
+        res = await telegram_service.delete_dialog_filter(filter_id=filter_id)
+        return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
 async def telegram_create_chat(
     title: str,
     about: Optional[str] = None,

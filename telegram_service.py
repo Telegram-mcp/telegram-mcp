@@ -1653,8 +1653,31 @@ async def __agent_exec__(client, telegram_service, service, events, functions, t
         client = await self._ensure_connected()
         raw_filters = await client(functions.messages.GetDialogFiltersRequest())
 
+        filter_list = getattr(raw_filters, "filters", raw_filters)
+        if not isinstance(filter_list, (list, tuple)):
+            filter_list = []
+
         filters = []
-        for f in raw_filters:
+        for f in filter_list:
+            if isinstance(f, types.DialogFilterDefault):
+                filters.append({
+                    "id": 0,
+                    "title": "All Chats",
+                    "emoticon": None,
+                    "is_default": True,
+                    "contacts": False,
+                    "non_contacts": False,
+                    "groups": False,
+                    "broadcasts": False,
+                    "bots": False,
+                    "exclude_muted": False,
+                    "exclude_read": False,
+                    "pinned_peers_count": 0,
+                    "include_peers_count": 0,
+                    "exclude_peers_count": 0,
+                })
+                continue
+
             title_text = ""
             if hasattr(f, "title"):
                 title_text = f.title.text if hasattr(f.title, "text") else str(f.title)
@@ -1663,6 +1686,7 @@ async def __agent_exec__(client, telegram_service, service, events, functions, t
                 "id": getattr(f, "id", None),
                 "title": title_text,
                 "emoticon": getattr(f, "emoticon", None),
+                "is_default": False,
                 "contacts": bool(getattr(f, "contacts", False)),
                 "non_contacts": bool(getattr(f, "non_contacts", False)),
                 "groups": bool(getattr(f, "groups", False)),
@@ -1675,6 +1699,83 @@ async def __agent_exec__(client, telegram_service, service, events, functions, t
                 "exclude_peers_count": len(getattr(f, "exclude_peers", []) or []),
             })
         return filters
+
+    async def create_dialog_filter(
+        self,
+        title: str,
+        emoticon: Optional[str] = None,
+        filter_id: Optional[int] = None,
+        contacts: bool = False,
+        non_contacts: bool = False,
+        groups: bool = False,
+        broadcasts: bool = False,
+        bots: bool = False,
+        exclude_muted: bool = False,
+        exclude_read: bool = False,
+        exclude_archived: bool = False,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        raw_filters = await client(functions.messages.GetDialogFiltersRequest())
+        existing_filters = getattr(raw_filters, "filters", raw_filters)
+        if not isinstance(existing_filters, (list, tuple)):
+            existing_filters = []
+
+        if filter_id is None:
+            existing_ids = {getattr(f, "id", 0) for f in existing_filters if hasattr(f, "id") and f.id is not None}
+            candidate_id = 2
+            while candidate_id in existing_ids:
+                candidate_id += 1
+            filter_id = candidate_id
+
+        text_title = types.TextWithEntities(text=title, entities=[])
+        dialog_filter = types.DialogFilter(
+            id=filter_id,
+            title=text_title,
+            pinned_peers=[],
+            include_peers=[],
+            exclude_peers=[],
+            contacts=contacts or None,
+            non_contacts=non_contacts or None,
+            groups=groups or None,
+            broadcasts=broadcasts or None,
+            bots=bots or None,
+            exclude_muted=exclude_muted or None,
+            exclude_read=exclude_read or None,
+            exclude_archived=exclude_archived or None,
+            emoticon=emoticon,
+        )
+
+        await client(functions.messages.UpdateDialogFilterRequest(
+            id=filter_id,
+            filter=dialog_filter,
+        ))
+
+        return {
+            "success": True,
+            "id": filter_id,
+            "title": title,
+            "emoticon": emoticon,
+            "bots": bots,
+            "groups": groups,
+            "broadcasts": broadcasts,
+            "contacts": contacts,
+            "non_contacts": non_contacts,
+        }
+
+    async def delete_dialog_filter(
+        self,
+        filter_id: int,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        await client(functions.messages.UpdateDialogFilterRequest(
+            id=filter_id,
+            filter=None,
+        ))
+        return {
+            "success": True,
+            "deleted_filter_id": filter_id,
+        }
+
 
     async def create_chat(
         self,

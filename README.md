@@ -155,6 +155,8 @@ Add to your `claude_desktop_config.json`:
 | `telegram_unblock_peer` | `peer_identifier` | Unblocks a previously blocked user or bot. |
 | `telegram_get_blocked_peers` | `limit?` | Retrieves the list of currently blocked users and bots. |
 | `telegram_get_dialog_filters` | | Retrieves configured Telegram chat folders/filters (e.g. Work, Bots, Personal) and rule counts. |
+| `telegram_create_dialog_filter` | `title`, `emoticon?`, `filter_id?`, `bots?`, `groups?`, `broadcasts?` | Creates a new Telegram chat folder/filter to organize conversations. |
+| `telegram_delete_dialog_filter` | `filter_id` | Deletes a Telegram chat folder/filter by folder ID. |
 | `telegram_create_chat` | `title`, `about?`, `megagroup?`, `for_forum?` | Creates a new supergroup or broadcast channel for testing workflows or bot integrations. |
 | `telegram_delete_chat` | `chat_identifier` | Permanently deletes a supergroup or channel (must be creator/owner). |
 | `telegram_create_invite_link` | `chat_identifier`, `title?`, `expire_in_seconds?`, `expire_date_iso?`, `usage_limit?`, `request_needed?` | Generates custom invite links with expiration, member limits, and approval gates. |
