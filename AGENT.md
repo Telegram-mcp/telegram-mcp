@@ -260,3 +260,11 @@ The server exposes the following tools:
 48. `telegram_download_profile_photo`
     - **Arguments**: `bot_username`, `output_dir?`
     - **Usage**: Downloads user, bot, channel, or group avatar for AI visual inspection.
+
+49. `telegram_send_location`
+    - **Arguments**: `bot_username`, `latitude`, `longitude`, `title?`, `address?`, `provider?`, `reply_to_msg_id?`, `topic_id?`
+    - **Usage**: Sends geographic coordinates or a named venue location to a bot or chat.
+
+50. `telegram_get_user_profile`
+    - **Arguments**: `user_identifier`
+    - **Usage**: Retrieves full profile metadata including biography, Telegram Premium status, verification badge, fake/scam flags, and mutual groups.

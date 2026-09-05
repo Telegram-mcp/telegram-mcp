@@ -1078,6 +1078,52 @@ async def telegram_download_profile_photo(
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
 
 
+@mcp.tool()
+async def telegram_send_location(
+    bot_username: str,
+    latitude: float,
+    longitude: float,
+    title: Optional[str] = None,
+    address: Optional[str] = None,
+    provider: Optional[str] = None,
+    reply_to_msg_id: Optional[int] = None,
+    topic_id: Optional[int] = None,
+) -> str:
+    """
+    Sends geographic coordinates (lat/long) or a named venue to a bot or chat.
+    Useful for testing location-aware bots (delivery, weather, transit, check-in).
+    """
+    try:
+        sent = await telegram_service.send_location(
+            bot_username=bot_username,
+            latitude=latitude,
+            longitude=longitude,
+            title=title,
+            address=address,
+            provider=provider,
+            reply_to_msg_id=reply_to_msg_id,
+            topic_id=topic_id,
+        )
+        return json.dumps({"status": "success", "sent_location": sent}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_get_user_profile(
+    user_identifier: str,
+) -> str:
+    """
+    Retrieves full profile metadata for a user or bot: biography/about, Telegram Premium status,
+    verification badge, scam/fake flags, and mutual groups count.
+    """
+    try:
+        profile = await telegram_service.get_user_profile(user_identifier=user_identifier)
+        return json.dumps({"status": "success", "user_profile": profile}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
 if __name__ == "__main__":
     def handle_signal(*args):
         sys.exit(0)

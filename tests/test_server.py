@@ -53,12 +53,14 @@ class TestServerTools(unittest.TestCase):
             "telegram_send_saved_message",
             "telegram_get_saved_messages",
             "telegram_download_profile_photo",
+            "telegram_send_location",
+            "telegram_get_user_profile",
             "telegram_clear_chat",
             "telegram_send_and_verify",
             "telegram_run_test_suite",
             "telegram_execute_code",
         ]
-        self.assertEqual(len(expected_tools), 48)
+        self.assertEqual(len(expected_tools), 50)
         for tool in expected_tools:
             self.assertIn(tool, tool_names, f"Missing tool: {tool}")
 
@@ -84,6 +86,49 @@ class TestServerTools(unittest.TestCase):
             self.assertNotIn("987654", user["phone"])
             self.assertIn("rate_limiting", parsed)
             self.assertEqual(parsed["rate_limiting"]["flood_wait_events"], 0)
+
+    def test_get_user_profile_phone_masking(self):
+        import asyncio
+
+        mock_client = AsyncMock()
+        mock_user = MagicMock()
+        mock_user.id = 99999
+        mock_user.first_name = "Test"
+        mock_user.last_name = "User"
+        mock_user.username = "testuser"
+        mock_user.phone = "14155552671"
+        mock_user.bot = False
+        mock_user.verified = True
+        mock_user.premium = True
+        mock_user.scam = False
+        mock_user.fake = False
+
+        mock_full = MagicMock()
+        mock_full.about = "Building cool agents"
+        mock_full.common_chats_count = 3
+        mock_full.blocked = False
+        mock_full.pinned_msg_id = 100
+        mock_full.bot_info = None
+
+        mock_res = MagicMock()
+        mock_res.full_user = mock_full
+        mock_res.users = [mock_user]
+
+        mock_client.get_input_entity = AsyncMock(return_value="mock_entity")
+        mock_client.return_value = mock_res
+        mock_client.__call__ = AsyncMock(return_value=mock_res)
+
+        with patch.object(server.telegram_service, "_ensure_connected", AsyncMock(return_value=mock_client)):
+            raw_result = asyncio.run(server.telegram_get_user_profile("testuser"))
+            parsed = json.loads(raw_result)
+            self.assertEqual(parsed["status"], "success")
+            profile = parsed["user_profile"]
+            self.assertEqual(profile["username"], "testuser")
+            self.assertTrue(profile["is_premium"])
+            self.assertTrue(profile["is_verified"])
+            self.assertEqual(profile["about"], "Building cool agents")
+            self.assertEqual(profile["phone"], "+14 ****** 2671")
+            self.assertNotIn("555", profile["phone"])
 
 
 if __name__ == "__main__":

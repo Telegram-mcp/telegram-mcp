@@ -56,3 +56,5 @@
 - `telegram_send_saved_message(text, file_path)`: Sends a message or file directly to Telegram Saved Messages.
 - `telegram_get_saved_messages(limit)`: Retrieves saved messages and notes from Telegram Saved Messages.
 - `telegram_download_profile_photo(bot_username, output_dir)`: Downloads the profile photo or avatar of a user, bot, channel, or group.
+- `telegram_send_location(bot_username, latitude, longitude, title, address, provider, reply_to_msg_id, topic_id)`: Sends geographic coordinates or named venue to bot/chat.
+- `telegram_get_user_profile(user_identifier)`: Retrieves full user/bot profile metadata including bio, Telegram Premium status, verification badge, and scam/fake flags.

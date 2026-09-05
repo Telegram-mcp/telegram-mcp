@@ -129,7 +129,16 @@ class TelegramService:
             raise ValueError("Bot username was not provided and DEFAULT_TARGET_BOT is not configured.")
         if "t.me/" in target:
             target = target.split("t.me/")[-1].strip()
+        if target.lower() == "me":
+            return "me"
         return target if (target.startswith("@") or target.startswith("-") or target.isdigit()) else f"@{target}"
+
+    @staticmethod
+    def _mask_phone(phone: Optional[str]) -> Optional[str]:
+        if not phone:
+            return None
+        clean = str(phone).lstrip("+")
+        return f"+{clean[:2]} ****** {clean[-4:]}" if len(clean) >= 6 else "***"
 
     def _format_message(self, msg: custom.Message) -> Dict[str, Any]:
         buttons = []
@@ -1398,6 +1407,79 @@ async def __agent_exec__(client, telegram_service, service, events, functions, t
                 "message": f"No profile photo found for {target}",
             }
 
+    async def send_location(
+        self,
+        bot_username: str,
+        latitude: float,
+        longitude: float,
+        title: Optional[str] = None,
+        address: Optional[str] = None,
+        provider: Optional[str] = None,
+        reply_to_msg_id: Optional[int] = None,
+        topic_id: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+
+        geo_point = types.InputGeoPoint(lat=float(latitude), long=float(longitude))
+        if title and address:
+            media = types.InputMediaVenue(
+                geo_point=geo_point,
+                title=title,
+                address=address,
+                provider=provider or "",
+                venue_id="",
+                venue_type="",
+            )
+        else:
+            media = types.InputMediaGeoPoint(geo_point=geo_point)
+
+        effective_reply = reply_to_msg_id if reply_to_msg_id is not None else topic_id
+        sent = await client.send_file(target, media, reply_to=effective_reply)
+        return self._format_message(sent)
+
+    async def get_user_profile(
+        self,
+        user_identifier: str,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(user_identifier)
+        input_user = await client.get_input_entity(target)
+
+        res = await client(functions.users.GetFullUserRequest(id=input_user))
+        full = getattr(res, "full_user", None)
+        user = res.users[0] if (hasattr(res, "users") and res.users) else None
+
+        bot_info_data = None
+        if full and getattr(full, "bot_info", None):
+            b_info = full.bot_info
+            bot_info_data = {
+                "description": getattr(b_info, "description", None),
+                "commands": [
+                    {"command": cmd.command, "description": cmd.description}
+                    for cmd in getattr(b_info, "commands", [])
+                ],
+            }
+
+        return {
+            "id": getattr(user, "id", None),
+            "username": getattr(user, "username", None),
+            "first_name": getattr(user, "first_name", None),
+            "last_name": getattr(user, "last_name", None),
+            "phone": self._mask_phone(getattr(user, "phone", None)),
+            "is_bot": getattr(user, "bot", False),
+            "is_verified": getattr(user, "verified", False),
+            "is_premium": getattr(user, "premium", False),
+            "is_scam": getattr(user, "scam", False),
+            "is_fake": getattr(user, "fake", False),
+            "about": getattr(full, "about", None) if full else None,
+            "common_chats_count": getattr(full, "common_chats_count", 0) if full else 0,
+            "blocked": getattr(full, "blocked", False) if full else False,
+            "pinned_msg_id": getattr(full, "pinned_msg_id", None) if full else None,
+            "bot_info": bot_info_data,
+        }
+
 
 telegram_service = TelegramService()
+
 

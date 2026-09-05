@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [v1.10.0] — 2026-09-05 (21:16 IST)
+`[2026-09-05]{21:16:00} v1.10.0 Release: Added geolocation & venue dispatch and extended user profile & premium inspector #50 total MCP tools`
+
+### 🚀 New Features
+* **Location & Venue Dispatch (`telegram_send_location`)**: Allows automated agents to send precise coordinates (`latitude`, `longitude`) or named venues (`title`, `address`, `provider`) with forum topic support for testing delivery, taxi, weather, and map bots.
+* **Extended User & Bot Profile Inspector (`telegram_get_user_profile`)**: Retrieves complete user profile metadata including biography/about text, Telegram Premium status, verification badge, fake/scam warnings, and mutual groups count with automatic phone privacy masking.
+
+---
+
 ## [v1.9.0] — 2026-09-05 (20:58 IST)
 `[2026-09-05]{20:58:00} v1.9.0 Release: Added poll voting, vote retraction, media search, saved messages, avatar download, rate limit telemetry, and forum topic support #48 total MCP tools`
 
