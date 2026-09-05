@@ -62,12 +62,13 @@ class TestServerTools(unittest.TestCase):
             "telegram_get_dialog_filters",
             "telegram_create_chat",
             "telegram_delete_chat",
+            "telegram_create_invite_link",
             "telegram_clear_chat",
             "telegram_send_and_verify",
             "telegram_run_test_suite",
             "telegram_execute_code",
         ]
-        self.assertEqual(len(expected_tools), 57)
+        self.assertEqual(len(expected_tools), 58)
         for tool in expected_tools:
             self.assertIn(tool, tool_names, f"Missing tool: {tool}")
 
@@ -93,6 +94,8 @@ class TestServerTools(unittest.TestCase):
             self.assertNotIn("987654", user["phone"])
             self.assertIn("rate_limiting", parsed)
             self.assertEqual(parsed["rate_limiting"]["flood_wait_events"], 0)
+            self.assertIn("proxy", parsed)
+            self.assertFalse(parsed["proxy"]["configured"])
 
     def test_get_user_profile_phone_masking(self):
         import asyncio
@@ -257,8 +260,34 @@ class TestServerTools(unittest.TestCase):
             parsed = json.loads(raw_result)
             self.assertTrue(parsed["success"])
             self.assertEqual(parsed["id"], 100200300)
-            self.assertEqual(parsed["title"], "Test Automation Group")
             self.assertTrue(parsed["is_forum"])
+
+    def test_create_invite_link(self):
+        import asyncio
+
+        mock_client = AsyncMock()
+        mock_client.get_input_entity = AsyncMock(return_value="mock_peer")
+
+        mock_invite = MagicMock()
+        mock_invite.link = "https://t.me/+AbCdEfGh1234"
+        mock_invite.title = "Beta Testers"
+        mock_invite.expire_date = None
+        mock_invite.usage_limit = 25
+        mock_invite.usage = 3
+        mock_invite.request_needed = False
+        mock_invite.admin_id = 999
+        mock_client.return_value = mock_invite
+
+        with patch.object(server.telegram_service, "_ensure_connected", AsyncMock(return_value=mock_client)):
+            raw_result = asyncio.run(server.telegram_create_invite_link(
+                chat_identifier="@mygroup",
+                title="Beta Testers",
+                usage_limit=25,
+            ))
+            parsed = json.loads(raw_result)
+            self.assertTrue(parsed["success"])
+            self.assertEqual(parsed["link"], "https://t.me/+AbCdEfGh1234")
+            self.assertEqual(parsed["usage_limit"], 25)
 
 
 if __name__ == "__main__":

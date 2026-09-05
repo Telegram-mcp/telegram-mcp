@@ -30,8 +30,24 @@ async def main():
         client.session.set_dc(2, "149.154.167.40", 443)
     else:
         print("\nConfiguring for Production Server...")
-        
-    await client.start()
+
+    auth_choice = input("\nSelect Authentication Method:\n  [1] Phone Number & Code\n  [2] QR Code (Scan with Telegram mobile app)\nChoice [1/2, default 1]: ").strip()
+    if auth_choice == "2":
+        await client.connect()
+        qr_login = await client.qr_login()
+        print("\n📱 Open Telegram > Settings > Devices > Link Desktop Device\n")
+        try:
+            import qrcode
+            qr = qrcode.QRCode()
+            qr.add_data(qr_login.url)
+            qr.print_ascii(invert=True)
+        except ImportError:
+            print(f"Scan or open the login URL: {qr_login.url}")
+        print("\n⏳ Waiting for QR code scan in Telegram mobile app...")
+        await qr_login.wait()
+    else:
+        await client.start()
+
     
     me = await client.get_me()
     print(f"\n🎉 Successfully logged in as: {me.first_name} (ID: {me.id})")

@@ -53,6 +53,12 @@ async def telegram_status() -> str:
             "flood_wait_events": getattr(telegram_service, "flood_wait_events", 0),
             "last_flood_wait_seconds": getattr(telegram_service, "last_flood_wait_seconds", 0),
         },
+        "proxy": {
+            "configured": bool(os.environ.get("TELEGRAM_PROXY_HOST")),
+            "type": os.environ.get("TELEGRAM_PROXY_TYPE", "socks5").lower() if os.environ.get("TELEGRAM_PROXY_HOST") else None,
+            "host": os.environ.get("TELEGRAM_PROXY_HOST"),
+            "port": int(os.environ.get("TELEGRAM_PROXY_PORT", "1080")) if os.environ.get("TELEGRAM_PROXY_HOST") else None,
+        },
     }
 
     if not status["session_set"]:
@@ -1229,6 +1235,32 @@ async def telegram_delete_chat(
     try:
         res = await telegram_service.delete_chat(chat_identifier=chat_identifier)
         return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_create_invite_link(
+    chat_identifier: str,
+    title: Optional[str] = None,
+    expire_in_seconds: Optional[int] = None,
+    expire_date_iso: Optional[str] = None,
+    usage_limit: Optional[int] = None,
+    request_needed: bool = False,
+) -> str:
+    """
+    Creates a new invite link for a chat or channel with optional expiration, usage limit, and approval requirement.
+    """
+    try:
+        link_data = await telegram_service.create_invite_link(
+            chat_identifier=chat_identifier,
+            title=title,
+            expire_in_seconds=expire_in_seconds,
+            expire_date_iso=expire_date_iso,
+            usage_limit=usage_limit,
+            request_needed=request_needed,
+        )
+        return json.dumps(link_data, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
 

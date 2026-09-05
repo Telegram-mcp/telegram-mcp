@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [v1.13.0] — 2026-09-05 (21:27 IST)
+`[2026-09-05]{21:27:00} v1.13.0 Release: Added custom chat invite links, proxy routing support, and terminal QR code login #58 total MCP tools`
+
+### 🚀 New Features
+* **Custom Chat Invite Link Generator (`telegram_create_invite_link`)**: Generates custom invite links with expiration timestamps (`expire_in_seconds`, `expire_date_iso`), member usage limits (`usage_limit`), and join request approval gates (`request_needed`).
+* **SOCKS5 & HTTP Proxy Support**: Configured proxy routing via environment variables (`TELEGRAM_PROXY_HOST`, `TELEGRAM_PROXY_PORT`, `TELEGRAM_PROXY_TYPE`, `TELEGRAM_PROXY_USER`, `TELEGRAM_PROXY_PASS`) and exposed proxy telemetry in `telegram_status`.
+* **Terminal QR Code Login (`login.py`)**: Added interactive QR code login option rendering an ASCII QR code in the terminal for instant scanning with the Telegram mobile app.
+
+---
+
 ## [v1.12.0] — 2026-09-05 (21:24 IST)
 `[2026-09-05]{21:24:00} v1.12.0 Release: Added chat folders/filters inspection and disposable chat lifecycle management #57 total MCP tools`
 

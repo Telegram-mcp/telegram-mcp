@@ -157,6 +157,7 @@ Add to your `claude_desktop_config.json`:
 | `telegram_get_dialog_filters` | | Retrieves configured Telegram chat folders/filters (e.g. Work, Bots, Personal) and rule counts. |
 | `telegram_create_chat` | `title`, `about?`, `megagroup?`, `for_forum?` | Creates a new supergroup or broadcast channel for testing workflows or bot integrations. |
 | `telegram_delete_chat` | `chat_identifier` | Permanently deletes a supergroup or channel (must be creator/owner). |
+| `telegram_create_invite_link` | `chat_identifier`, `title?`, `expire_in_seconds?`, `expire_date_iso?`, `usage_limit?`, `request_needed?` | Generates custom invite links with expiration, member limits, and approval gates. |
 | `telegram_execute_code` | `code`, `timeout_seconds?` | Executes arbitrary Python code with live Telethon client access. |
 | `telegram_get_chat_history` | `bot_username`, `limit?` | Fetches recent conversation history. |
 | `telegram_clear_chat` | `bot_username` | Clears conversation dialog for clean tests. |

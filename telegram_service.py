@@ -76,7 +76,22 @@ class TelegramService:
 
             api_id = int(api_id_str)
             session = StringSession(session_str)
-            self.client = TelegramClient(session, api_id, api_hash, flood_sleep_threshold=5)
+
+            proxy = None
+            proxy_host = os.environ.get("TELEGRAM_PROXY_HOST")
+            if proxy_host:
+                proxy_port = int(os.environ.get("TELEGRAM_PROXY_PORT", "1080"))
+                proxy_type = os.environ.get("TELEGRAM_PROXY_TYPE", "socks5").lower()
+                proxy = {
+                    "proxy_type": proxy_type,
+                    "addr": proxy_host,
+                    "port": proxy_port,
+                    "username": os.environ.get("TELEGRAM_PROXY_USER"),
+                    "password": os.environ.get("TELEGRAM_PROXY_PASS"),
+                    "rdns": True,
+                }
+
+            self.client = TelegramClient(session, api_id, api_hash, flood_sleep_threshold=5, proxy=proxy)
 
             if is_test_mode:
                 self.client.session.set_dc(2, "149.154.167.40", 443)
@@ -1702,8 +1717,47 @@ async def __agent_exec__(client, telegram_service, service, events, functions, t
         await client(functions.channels.DeleteChannelRequest(channel=input_channel))
         return {"success": True, "deleted_chat": target}
 
+    async def create_invite_link(
+        self,
+        chat_identifier: str,
+        title: Optional[str] = None,
+        expire_in_seconds: Optional[int] = None,
+        expire_date_iso: Optional[str] = None,
+        usage_limit: Optional[int] = None,
+        request_needed: bool = False,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(chat_identifier)
+        input_peer = await client.get_input_entity(target)
+
+        expire_dt = None
+        if expire_in_seconds is not None:
+            expire_dt = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=expire_in_seconds)
+        elif expire_date_iso:
+            expire_dt = datetime.datetime.fromisoformat(expire_date_iso.replace("Z", "+00:00"))
+
+        res = await client(functions.messages.ExportChatInviteRequest(
+            peer=input_peer,
+            title=title,
+            expire_date=expire_dt,
+            usage_limit=usage_limit,
+            request_needed=request_needed,
+        ))
+
+        return {
+            "success": True,
+            "link": getattr(res, "link", None),
+            "title": getattr(res, "title", None),
+            "expire_date": res.expire_date.isoformat() if getattr(res, "expire_date", None) else None,
+            "usage_limit": getattr(res, "usage_limit", None),
+            "usage": getattr(res, "usage", 0),
+            "request_needed": bool(getattr(res, "request_needed", False)),
+            "admin_id": getattr(res, "admin_id", None),
+        }
+
 
 telegram_service = TelegramService()
+
 
 
 

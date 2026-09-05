@@ -296,3 +296,7 @@ The server exposes the following tools:
 57. `telegram_delete_chat`
     - **Arguments**: `chat_identifier`
     - **Usage**: Permanently deletes a channel or supergroup created by the account.
+
+58. `telegram_create_invite_link`
+    - **Arguments**: `chat_identifier`, `title?`, `expire_in_seconds?`, `expire_date_iso?`, `usage_limit?`, `request_needed?` (default: `False`)
+    - **Usage**: Generates customizable chat invite links with expiration timestamps, member limits, and approval gates.
