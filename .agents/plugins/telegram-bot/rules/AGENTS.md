@@ -50,3 +50,9 @@
 - `telegram_send_chat_action(bot_username, action)`: Broadcasts chat presence indicators ('typing', 'upload_photo', etc.).
 - `telegram_join_chat(chat_identifier)`: Joins a public channel/supergroup or private chat via invite link.
 - `telegram_leave_chat(chat_identifier)`: Leaves a channel or group by username or ID.
+- `telegram_vote_poll(bot_username, message_id, option_index)`: Votes in a poll or quiz.
+- `telegram_retract_vote(bot_username, message_id)`: Retracts a vote from a poll.
+- `telegram_search_media(bot_username, media_type, query, limit)`: Searches chat history filtered by specific media type (photo, video, document, voice, audio, gif, url).
+- `telegram_send_saved_message(text, file_path)`: Sends a message or file directly to Telegram Saved Messages.
+- `telegram_get_saved_messages(limit)`: Retrieves saved messages and notes from Telegram Saved Messages.
+- `telegram_download_profile_photo(bot_username, output_dir)`: Downloads the profile photo or avatar of a user, bot, channel, or group.

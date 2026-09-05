@@ -7,6 +7,7 @@ from typing import Optional, List, Dict, Any, Union
 from contextlib import asynccontextmanager
 
 from mcp.server.mcpserver import MCPServer
+from telethon import errors
 from telegram_service import telegram_service
 
 
@@ -48,6 +49,10 @@ async def telegram_status() -> str:
         "api_hash_set": bool(os.environ.get("TELEGRAM_API_HASH")),
         "session_set": bool(os.environ.get("TELEGRAM_SESSION")),
         "default_bot": os.environ.get("DEFAULT_TARGET_BOT", "(not set)"),
+        "rate_limiting": {
+            "flood_wait_events": getattr(telegram_service, "flood_wait_events", 0),
+            "last_flood_wait_seconds": getattr(telegram_service, "last_flood_wait_seconds", 0),
+        },
     }
 
     if not status["session_set"]:
@@ -144,18 +149,21 @@ async def telegram_send_message(
     bot_username: str,
     text: str,
     reply_to_msg_id: Optional[int] = None,
+    topic_id: Optional[int] = None,
     parse_mode: Optional[str] = "md",
     wait_response: bool = True,
     timeout_seconds: int = 10,
 ) -> str:
     """
     Sends a text message or payload to the target bot or chat. Supports Markdown ('md') or HTML ('html') formatting.
+    Use topic_id to route directly into a supergroup forum topic.
     """
     try:
         sent = await telegram_service.send_message(
             bot_username=bot_username,
             text=text,
             reply_to_msg_id=reply_to_msg_id,
+            topic_id=topic_id,
             parse_mode=parse_mode,
         )
         response = None
@@ -184,12 +192,14 @@ async def telegram_send_file(
     file_path: str,
     caption: Optional[str] = None,
     reply_to_msg_id: Optional[int] = None,
+    topic_id: Optional[int] = None,
     voice_note: bool = False,
     wait_response: bool = True,
     timeout_seconds: int = 15,
 ) -> str:
     """
     Sends a file, photo, document, voice note, or media to the bot and optionally waits for its response.
+    Use topic_id to post into supergroup forum topics.
     Set voice_note=True to send audio as a circular/native Telegram voice message.
     """
     try:
@@ -198,6 +208,7 @@ async def telegram_send_file(
             file_path=file_path,
             caption=caption,
             reply_to_msg_id=reply_to_msg_id,
+            topic_id=topic_id,
             voice_note=voice_note,
         )
         response = None
@@ -451,15 +462,18 @@ async def telegram_forward_messages(
     to_chat: str,
     from_chat: str,
     message_ids: List[int],
+    drop_author: bool = False,
 ) -> str:
     """
-    Forwards messages from one chat to another. Useful for testing bots that verify forwarded content or proofs.
+    Forwards messages from one chat to another.
+    Set drop_author=True to send cleanly as a copy without the forwarded attribution header.
     """
     try:
         res = await telegram_service.forward_messages(
             to_chat=to_chat,
             from_chat=from_chat,
             message_ids=message_ids,
+            drop_author=drop_author,
         )
         return json.dumps({"status": "success", "forwarded_count": len(res), "messages": res}, indent=2)
     except Exception as e:
@@ -627,12 +641,21 @@ async def telegram_send_album(
     bot_username: str,
     file_paths: List[str],
     caption: Optional[str] = None,
+    reply_to_msg_id: Optional[int] = None,
+    topic_id: Optional[int] = None,
 ) -> str:
     """
     Sends multiple photos or files grouped together as an album in a single message.
+    Use topic_id to post into supergroup forum topics.
     """
     try:
-        sent = await telegram_service.send_album(bot_username=bot_username, file_paths=file_paths, caption=caption)
+        sent = await telegram_service.send_album(
+            bot_username=bot_username,
+            file_paths=file_paths,
+            caption=caption,
+            reply_to_msg_id=reply_to_msg_id,
+            topic_id=topic_id,
+        )
         return json.dumps({"status": "success", "album_count": len(sent), "items": sent}, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
@@ -945,6 +968,112 @@ async def telegram_leave_chat(
     try:
         res = await telegram_service.leave_chat(chat_identifier=chat_identifier)
         return json.dumps(res, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_vote_poll(
+    bot_username: str,
+    message_id: int,
+    option_index: int,
+) -> str:
+    """
+    Casts a vote on a specific option in a poll or quiz message.
+    """
+    try:
+        res = await telegram_service.vote_poll(
+            bot_username=bot_username,
+            message_id=message_id,
+            option_index=option_index,
+        )
+        return json.dumps({"status": "success", "vote": res}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_retract_vote(
+    bot_username: str,
+    message_id: int,
+) -> str:
+    """
+    Retracts a previously submitted vote in a poll.
+    """
+    try:
+        res = await telegram_service.retract_vote(
+            bot_username=bot_username,
+            message_id=message_id,
+        )
+        return json.dumps({"status": "success", "result": res}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_search_media(
+    bot_username: str,
+    media_type: str = "photo",
+    query: str = "",
+    limit: int = 20,
+) -> str:
+    """
+    Searches and filters chat messages by media type.
+    media_type options: 'photo', 'document', 'video', 'voice', 'audio', 'url', 'gif'.
+    """
+    try:
+        msgs = await telegram_service.search_media(
+            bot_username=bot_username,
+            media_type=media_type,
+            query=query,
+            limit=limit,
+        )
+        return json.dumps({"status": "success", "media_type": media_type, "count": len(msgs), "messages": msgs}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_send_saved_message(
+    text: str,
+    file_path: Optional[str] = None,
+) -> str:
+    """
+    Sends a message or file to your personal Telegram 'Saved Messages' cloud chat (InputPeerSelf).
+    Ideal as a private cloud workspace or staging scratchpad for test logs and artifacts.
+    """
+    try:
+        sent = await telegram_service.send_saved_message(text=text, file_path=file_path)
+        return json.dumps({"status": "success", "saved_message": sent}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_get_saved_messages(
+    limit: int = 10,
+) -> str:
+    """
+    Retrieves recent messages from your personal Telegram 'Saved Messages' cloud chat.
+    """
+    try:
+        msgs = await telegram_service.get_saved_messages(limit=limit)
+        return json.dumps({"status": "success", "count": len(msgs), "messages": msgs}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def telegram_download_profile_photo(
+    bot_username: str,
+    output_dir: Optional[str] = None,
+) -> str:
+    """
+    Downloads the profile photo or avatar of any user, bot, or group for visual inspection by vision models.
+    """
+    try:
+        res = await telegram_service.download_profile_photo(bot_username=bot_username, output_dir=output_dir)
+        return json.dumps({"status": "success", "result": res}, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
 

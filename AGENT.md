@@ -236,3 +236,27 @@ The server exposes the following tools:
 42. `telegram_leave_chat`
     - **Arguments**: `chat_identifier`
     - **Usage**: Leaves a channel or supergroup by username or ID.
+
+43. `telegram_vote_poll`
+    - **Arguments**: `bot_username`, `message_id`, `option_index`
+    - **Usage**: Casts a vote on single-choice or multi-choice native Telegram polls or quizzes.
+
+44. `telegram_retract_vote`
+    - **Arguments**: `bot_username`, `message_id`
+    - **Usage**: Retracts / revokes an existing vote on a poll.
+
+45. `telegram_search_media`
+    - **Arguments**: `bot_username`, `media_type?` (`"photo"`, `"document"`, `"video"`, `"voice"`, `"audio"`, `"url"`, `"gif"`), `query?`, `limit?` (default: `20`)
+    - **Usage**: Searches chat history filtered by specific media type or keyword.
+
+46. `telegram_send_saved_message`
+    - **Arguments**: `text?`, `file_path?`
+    - **Usage**: Sends a note or document directly to Telegram "Saved Messages" (`InputPeerSelf`).
+
+47. `telegram_get_saved_messages`
+    - **Arguments**: `limit?` (default: `20`)
+    - **Usage**: Retrieves messages and files saved in Telegram "Saved Messages".
+
+48. `telegram_download_profile_photo`
+    - **Arguments**: `bot_username`, `output_dir?`
+    - **Usage**: Downloads user, bot, channel, or group avatar for AI visual inspection.

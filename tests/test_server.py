@@ -47,12 +47,18 @@ class TestServerTools(unittest.TestCase):
             "telegram_send_chat_action",
             "telegram_join_chat",
             "telegram_leave_chat",
+            "telegram_vote_poll",
+            "telegram_retract_vote",
+            "telegram_search_media",
+            "telegram_send_saved_message",
+            "telegram_get_saved_messages",
+            "telegram_download_profile_photo",
             "telegram_clear_chat",
             "telegram_send_and_verify",
             "telegram_run_test_suite",
             "telegram_execute_code",
         ]
-        self.assertEqual(len(expected_tools), 42)
+        self.assertEqual(len(expected_tools), 48)
         for tool in expected_tools:
             self.assertIn(tool, tool_names, f"Missing tool: {tool}")
 
@@ -76,6 +82,8 @@ class TestServerTools(unittest.TestCase):
             user = parsed["user"]
             self.assertEqual(user["phone"], "+91 ****** 3210")
             self.assertNotIn("987654", user["phone"])
+            self.assertIn("rate_limiting", parsed)
+            self.assertEqual(parsed["rate_limiting"]["flood_wait_events"], 0)
 
 
 if __name__ == "__main__":

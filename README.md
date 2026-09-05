@@ -142,6 +142,12 @@ Add to your `claude_desktop_config.json`:
 | `telegram_send_chat_action` | `bot_username`, `action?` | Broadcasts chat presence indicators ('typing', 'upload_photo', 'record_video', etc.). |
 | `telegram_join_chat` | `chat_identifier` | Joins a public channel/supergroup via @username or private chat via invite link (t.me/+...). |
 | `telegram_leave_chat` | `chat_identifier` | Leaves a channel or group by username or ID. |
+| `telegram_vote_poll` | `bot_username`, `message_id`, `option_index` | Casts a vote on a specific option in a poll or quiz message. |
+| `telegram_retract_vote` | `bot_username`, `message_id` | Retracts a previously submitted poll vote. |
+| `telegram_search_media` | `bot_username`, `media_type?`, `query?`, `limit?` | Searches chat messages filtered by media type ('photo', 'document', 'url', 'video', etc.). |
+| `telegram_send_saved_message` | `text`, `file_path?` | Sends a message or file to your personal Telegram 'Saved Messages' cloud chat (InputPeerSelf). |
+| `telegram_get_saved_messages` | `limit?` | Retrieves recent messages from your personal Telegram 'Saved Messages' cloud chat. |
+| `telegram_download_profile_photo` | `bot_username`, `output_dir?` | Downloads the profile photo or avatar of any user, bot, or group for visual inspection. |
 | `telegram_execute_code` | `code`, `timeout_seconds?` | Executes arbitrary Python code with live Telethon client access. |
 | `telegram_get_chat_history` | `bot_username`, `limit?` | Fetches recent conversation history. |
 | `telegram_clear_chat` | `bot_username` | Clears conversation dialog for clean tests. |

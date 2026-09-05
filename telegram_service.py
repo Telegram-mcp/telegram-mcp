@@ -8,7 +8,7 @@ import asyncio
 import datetime
 import traceback
 from typing import Optional, List, Dict, Any, Union
-from telethon import TelegramClient, custom, events
+from telethon import TelegramClient, custom, events, errors
 from telethon.tl import functions, types
 from telethon.sessions import StringSession
 from dotenv import load_dotenv
@@ -23,6 +23,8 @@ class TelegramService:
         self.client: Optional[TelegramClient] = None
         self._lock = asyncio.Lock()
         self._lock_fd: Optional[int] = None
+        self.flood_wait_events: int = 0
+        self.last_flood_wait_seconds: int = 0
 
     def _acquire_process_lock(self):
         if self._lock_fd is not None:
@@ -74,7 +76,7 @@ class TelegramService:
 
             api_id = int(api_id_str)
             session = StringSession(session_str)
-            self.client = TelegramClient(session, api_id, api_hash)
+            self.client = TelegramClient(session, api_id, api_hash, flood_sleep_threshold=5)
 
             if is_test_mode:
                 self.client.session.set_dc(2, "149.154.167.40", 443)
@@ -180,15 +182,17 @@ class TelegramService:
         bot_username: str,
         text: str,
         reply_to_msg_id: Optional[int] = None,
+        topic_id: Optional[int] = None,
         parse_mode: Optional[str] = "md",
     ) -> Dict[str, Any]:
         client = await self._ensure_connected()
         target = self._clean_bot_username(bot_username)
 
+        effective_reply = reply_to_msg_id if reply_to_msg_id is not None else topic_id
         sent = await client.send_message(
             target,
             text,
-            reply_to=reply_to_msg_id,
+            reply_to=effective_reply,
             parse_mode=parse_mode,
         )
         return self._format_message(sent)
@@ -233,6 +237,7 @@ class TelegramService:
         to_chat: str,
         from_chat: str,
         message_ids: List[int],
+        drop_author: bool = False,
     ) -> List[Dict[str, Any]]:
         client = await self._ensure_connected()
         target_to = self._clean_bot_username(to_chat)
@@ -242,6 +247,7 @@ class TelegramService:
             target_to,
             message_ids,
             target_from,
+            drop_author=drop_author,
         )
         if not isinstance(forwarded, list):
             forwarded = [forwarded]
@@ -353,6 +359,7 @@ class TelegramService:
         file_path: str,
         caption: Optional[str] = None,
         reply_to_msg_id: Optional[int] = None,
+        topic_id: Optional[int] = None,
         voice_note: bool = False,
     ) -> Dict[str, Any]:
         is_url = file_path.startswith("http://") or file_path.startswith("https://")
@@ -362,11 +369,12 @@ class TelegramService:
         client = await self._ensure_connected()
         target = self._clean_bot_username(bot_username)
 
+        effective_reply = reply_to_msg_id if reply_to_msg_id is not None else topic_id
         sent = await client.send_file(
             target,
             file_path,
             caption=caption,
-            reply_to=reply_to_msg_id,
+            reply_to=effective_reply,
             voice_note=voice_note,
         )
         return self._format_message(sent)
@@ -755,6 +763,8 @@ async def __agent_exec__(client, telegram_service, service, events, functions, t
         bot_username: str,
         file_paths: List[str],
         caption: Optional[str] = None,
+        reply_to_msg_id: Optional[int] = None,
+        topic_id: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         client = await self._ensure_connected()
         target = self._clean_bot_username(bot_username)
@@ -764,7 +774,8 @@ async def __agent_exec__(client, telegram_service, service, events, functions, t
             if not is_url and not os.path.exists(p):
                 raise FileNotFoundError(f"File not found: {p}")
 
-        sent = await client.send_file(target, file_paths, caption=caption)
+        effective_reply = reply_to_msg_id if reply_to_msg_id is not None else topic_id
+        sent = await client.send_file(target, file_paths, caption=caption, reply_to=effective_reply)
         if not isinstance(sent, list):
             sent = [sent]
         return [self._format_message(m) for m in sent]
@@ -1248,6 +1259,144 @@ async def __agent_exec__(client, telegram_service, service, events, functions, t
         except Exception:
             await client.delete_dialog(entity)
         return {"success": True, "left_chat": clean_target}
+
+    async def vote_poll(
+        self,
+        bot_username: str,
+        message_id: int,
+        option_index: int,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        await client(
+            functions.messages.SendVoteRequest(
+                peer=entity,
+                msg_id=message_id,
+                options=[bytes([option_index])],
+            )
+        )
+        return {
+            "success": True,
+            "message_id": message_id,
+            "voted_option_index": option_index,
+            "target": target,
+        }
+
+    async def retract_vote(
+        self,
+        bot_username: str,
+        message_id: int,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        await client(
+            functions.messages.SendVoteRequest(
+                peer=entity,
+                msg_id=message_id,
+                options=[],
+            )
+        )
+        return {
+            "success": True,
+            "message_id": message_id,
+            "retracted": True,
+            "target": target,
+        }
+
+    async def search_media(
+        self,
+        bot_username: str,
+        media_type: str = "photo",
+        query: str = "",
+        limit: int = 20,
+    ) -> List[Dict[str, Any]]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        filter_type_clean = media_type.lower().strip()
+        filter_map = {
+            "photo": types.InputMessagesFilterPhotos(),
+            "photos": types.InputMessagesFilterPhotos(),
+            "document": types.InputMessagesFilterDocument(),
+            "documents": types.InputMessagesFilterDocument(),
+            "video": types.InputMessagesFilterVideo(),
+            "videos": types.InputMessagesFilterVideo(),
+            "voice": types.InputMessagesFilterVoice(),
+            "audio": types.InputMessagesFilterMusic(),
+            "music": types.InputMessagesFilterMusic(),
+            "url": types.InputMessagesFilterUrl(),
+            "urls": types.InputMessagesFilterUrl(),
+            "gif": types.InputMessagesFilterGif(),
+            "gifs": types.InputMessagesFilterGif(),
+        }
+        tl_filter = filter_map.get(filter_type_clean, types.InputMessagesFilterPhotos())
+
+        raw_messages = await client.get_messages(
+            entity,
+            search=query or None,
+            filter=tl_filter,
+            limit=limit,
+        )
+        return [self._format_message(m) for m in raw_messages]
+
+    async def send_saved_message(
+        self,
+        text: str,
+        file_path: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        if file_path:
+            is_url = file_path.startswith("http://") or file_path.startswith("https://")
+            if not is_url and not os.path.exists(file_path):
+                raise FileNotFoundError(f"File not found: {file_path}")
+            sent = await client.send_file("me", file_path, caption=text)
+        else:
+            sent = await client.send_message("me", text)
+        return self._format_message(sent)
+
+    async def get_saved_messages(
+        self,
+        limit: int = 10,
+    ) -> List[Dict[str, Any]]:
+        client = await self._ensure_connected()
+        messages = await client.get_messages("me", limit=limit)
+        return [self._format_message(m) for m in messages]
+
+    async def download_profile_photo(
+        self,
+        bot_username: str,
+        output_dir: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        client = await self._ensure_connected()
+        target = self._clean_bot_username(bot_username)
+        entity = await client.get_input_entity(target)
+
+        save_dir = output_dir or os.path.join(os.getcwd(), "downloads")
+        os.makedirs(save_dir, exist_ok=True)
+
+        clean_filename = f"{target.replace('@', '')}_avatar.jpg"
+        target_path = os.path.join(save_dir, clean_filename)
+
+        downloaded_path = await client.download_profile_photo(entity, file=target_path)
+        if downloaded_path and os.path.exists(downloaded_path):
+            return {
+                "has_photo": True,
+                "photo_path": downloaded_path,
+                "file_size": os.path.getsize(downloaded_path),
+                "bot_username": target,
+            }
+        else:
+            return {
+                "has_photo": False,
+                "photo_path": None,
+                "bot_username": target,
+                "message": f"No profile photo found for {target}",
+            }
 
 
 telegram_service = TelegramService()

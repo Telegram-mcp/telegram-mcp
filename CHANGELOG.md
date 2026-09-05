@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [v1.9.0] — 2026-09-05 (20:58 IST)
+`[2026-09-05]{20:58:00} v1.9.0 Release: Added poll voting, vote retraction, media search, saved messages, avatar download, rate limit telemetry, and forum topic support #48 total MCP tools`
+
+### 🚀 New Features
+* **Poll Voting & Revocation (`telegram_vote_poll`, `telegram_retract_vote`)**: Allows automated agents to cast votes on single-choice or multi-choice native Telegram polls/quizzes and revoke previously submitted votes.
+* **Filtered Media Search (`telegram_search_media`)**: Searches chat history filtered by specific media type (`photo`, `document`, `video`, `voice`, `audio`, `gif`, `url`) with optional keyword queries.
+* **Telegram Saved Messages (`telegram_send_saved_message`, `telegram_get_saved_messages`)**: Direct reading and writing into the user's personal Telegram "Saved Messages" cloud storage (`InputPeerSelf`).
+* **Profile Photo & Avatar Retrieval (`telegram_download_profile_photo`)**: Downloads profile pictures and avatars of users, bots, channels, and groups for AI visual analysis.
+* **Supergroup Forum Topics Support**: Added `topic_id` parameter to `send_message`, `send_file`, and `send_album` to target specific forum thread topics within Telegram supergroups.
+* **Authorless Message Forwarding**: Added `drop_author` flag to `telegram_forward_messages` for clean reposts without original forward headers.
+* **Flood & Rate Limit Telemetry**: Configured `flood_sleep_threshold` on Telethon client to eliminate silent 60s freeze hangs and exposed real-time rate limit event telemetry in `telegram_status`.
+
+---
+
 ## [v1.8.0] — 2026-09-05 (20:43 IST)
 `[2026-09-05]{20:43:00} v1.8.0 Release: Added Mini App WebApp URL extraction, persistent reply keyboard clicking, chat actions, group join/leave, and HTTP URL file dispatch #42 total MCP tools`
 
